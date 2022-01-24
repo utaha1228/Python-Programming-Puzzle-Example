@@ -1,8 +1,8 @@
 <html> 
 <head> 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js" type="text/javascript"></script> 
-<script src="http://www.skulpt.org/js/skulpt.min.js" type="text/javascript"></script> 
-<script src="http://www.skulpt.org/js/skulpt-stdlib.js" type="text/javascript"></script> 
+<script src="js/skulpt.min.js" type="text/javascript"></script> 
+<script src="js/skulpt-stdlib.js" type="text/javascript"></script> 
 
 </head> 
 
@@ -12,13 +12,13 @@
 // output functions are configurable.  This one just appends some text
 // to a pre element.
 function outf(text) { 
-    var mypre = document.getElementById("output"); 
-    mypre.innerHTML = mypre.innerHTML + text; 
+	var mypre = document.getElementById("output"); 
+	mypre.innerHTML = mypre.innerHTML + text; 
 } 
 function builtinRead(x) {
-    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
-            throw "File not found: '" + x + "'";
-    return Sk.builtinFiles["files"][x];
+	if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+			throw "File not found: '" + x + "'";
+	return Sk.builtinFiles["files"][x];
 }
 
 // Here's everything you need to run a python program in skulpt
@@ -27,32 +27,50 @@ function builtinRead(x) {
 // configure the output function
 // call Sk.importMainWithBody()
 function runit() { 
-   var prog = document.getElementById("yourcode").value; 
-   var mypre = document.getElementById("output"); 
-   mypre.innerHTML = ''; 
-   Sk.pre = "output";
-   Sk.configure({output:outf, read:builtinRead}); 
-   (Sk.TurtleGraphics || (Sk.TurtleGraphics = {})).target = 'mycanvas';
-   var myPromise = Sk.misceval.asyncToPromise(function() {
-       return Sk.importMainWithBody("<stdin>", false, prog, true);
-   });
-   myPromise.then(function(mod) {
-       console.log('success');
-   },
-       function(err) {
-       console.log(err.toString());
-   });
+	var prog = document.getElementById("puzzlecode").value
+			+ "\n\n"
+			+ document.getElementById("yourcode").value
+			+ "\n\n"
+			+ document.getElementById("judgecode").value; 
+	console.log(prog);
+	var mypre = document.getElementById("output"); 
+	mypre.innerHTML = ''; 
+	Sk.configure({output:outf, read:builtinRead}); 
+	var myPromise = Sk.misceval.asyncToPromise(function() {
+		return Sk.importMainWithBody("<stdin>", false, prog, true);
+	});
+	myPromise.then(function(mod) {
+		console.log('success');
+	},
+		function(err) {
+		console.log(err.toString());
+		mypre.innerHTML = err.toString();
+	});
 } 
 </script> 
 
-<h3>Try This</h3> 
+<h3>Python Programming Puzzle Example 1</h3> 
+<textarea readonly id="puzzlecode" cols="100" rows="10">
+def judge(ans: List[int], n, k):
+	"""
+	Find a permutation of length `n` that has `k` fixed points
+	"""
+	assert sorted(ans) == [i for i in range(n)]
+	return k == len([i for i in range(n) if ans[i] == i])
+</textarea>
+<textarea readonly id="judgecode" cols="100" rows="10">
+testcases = [
+	dict(n=10, k=3),
+	dict(n=5, k=5),
+]
+if all(judge(f(**testcase), **testcase) for testcase in testcases):
+	print("Congrats!")
+else:
+	print("Failed.")
+</textarea>
 <form> 
-<textarea id="yourcode" cols="40" rows="10">import turtle
-
-t = turtle.Turtle()
-t.forward(100)
-
-print "Hello World" 
+<textarea id="yourcode" cols="100" rows="10" placeholder="def f(n, k):
+	pass">
 </textarea><br /> 
 <button type="button" onclick="runit()">Run</button> 
 </form> 
