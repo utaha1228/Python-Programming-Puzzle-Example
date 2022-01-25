@@ -12,13 +12,13 @@
 // output functions are configurable.  This one just appends some text
 // to a pre element.
 function outf(text) { 
-	var mypre = document.getElementById("output"); 
-	mypre.innerHTML = mypre.innerHTML + text; 
+    var mypre = document.getElementById("output"); 
+    mypre.innerHTML = mypre.innerHTML + text; 
 } 
 function builtinRead(x) {
-	if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
-			throw "File not found: '" + x + "'";
-	return Sk.builtinFiles["files"][x];
+    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+            throw "File not found: '" + x + "'";
+    return Sk.builtinFiles["files"][x];
 }
 
 // Here's everything you need to run a python program in skulpt
@@ -27,56 +27,157 @@ function builtinRead(x) {
 // configure the output function
 // call Sk.importMainWithBody()
 function runit() { 
-	var prog = document.getElementById("puzzlecode").value
-			+ "\n\n"
-			+ document.getElementById("yourcode").value
-			+ "\n\n"
-			+ document.getElementById("judgecode").value; 
-	console.log(prog);
-	var mypre = document.getElementById("output"); 
-	mypre.innerHTML = ''; 
-	Sk.configure({output:outf, read:builtinRead}); 
-	var myPromise = Sk.misceval.asyncToPromise(function() {
-		return Sk.importMainWithBody("<stdin>", false, prog, true);
-	});
-	myPromise.then(function(mod) {
-		console.log('success');
-	},
-		function(err) {
-		console.log(err.toString());
-		mypre.innerHTML = err.toString();
-	});
+    var prog = document.getElementById("yourcode").value
+            + "\n\n"
+            + document.getElementById("puzzlecode").value
+            + "\n\n"
+            + document.getElementById("judgecode").value; 
+    // console.log(prog);
+    var mypre = document.getElementById("output"); 
+    mypre.innerHTML = ''; 
+    Sk.configure({output:outf, read:builtinRead}); 
+    var myPromise = Sk.misceval.asyncToPromise(function() {
+        return Sk.importMainWithBody("<stdin>", false, prog, true);
+    });
+    myPromise.then(function(mod) {
+        console.log('success');
+    },
+        function(err) {
+        console.log(err.toString());
+        console.log(mypre.innerHTML);
+        console.log(mypre.innerText);
+        mypre.innerText += "\n" + err.toString() + "\n";
+    });
 } 
-</script> 
+function init() {
+    const ls = ['yourcode', 'puzzlecode', 'judgecode'];
+    ls.forEach(
+        id => 
+        document.getElementById(id).addEventListener('keydown', function(e) {
+            if (e.key == 'Tab') {
+                e.preventDefault();
+                var start = this.selectionStart;
+                var end = this.selectionEnd;
 
-<h3>Python Programming Puzzle Example 1</h3> 
-<textarea readonly id="puzzlecode" cols="100" rows="10">
-def judge(ans: List[int], n, k):
-	"""
-	Find a permutation of length `n` that has `k` fixed points
-	"""
-	assert sorted(ans) == [i for i in range(n)]
-	return k == len([i for i in range(n) if ans[i] == i])
-</textarea>
-<textarea readonly id="judgecode" cols="100" rows="10">
-testcases = [
-	dict(n=10, k=3),
-	dict(n=5, k=5),
+                // set textarea value to: text before caret + tab + text after caret
+                this.value = this.value.substring(0, start) +
+                "    " + this.value.substring(end);
+
+                // put caret at right position again
+                this.selectionStart =
+                this.selectionEnd = start + 4;
+            }
+        })
+    );
+}
+document.body.onload = init;
+
+function switchPuzzle(num) {
+    console.log("SWTICH " + num);
+
+    const id = parseInt(num) - 1;
+
+    puzzlecode = [
+`def judge(ans: str, s):
+    t = s + ans
+    return t == t[::-1]`,
+
+`def judge(ans: List[int], n, k):
+    assert sorted(ans) == [i for i in range(n)]
+    return k == len([i for i in range(n) if ans[i] == i])`,
+
+`def judge(moves: List[List[int]], board):
+    def isValid(x, y):
+        return 0 <= x < 4 and 0 <= y < 4
+    b = [[board[i][j] for j in range(4)] for i in range(4)]
+    for x, y in moves:
+        assert isValid(x, y)
+        for dx, dy in [[0, 0], [0, 1], [1, 0], [0, -1], [-1, 0]]:
+            if isValid(x + dx, y + dy):
+                b[x + dx][y + dy] = not b[x + dx][y + dy]
+
+    return all(b[x][y] == 0 for x in range(4) for y in range(4))`,
+    ];
+    judgecode = [
+`testcases = [
+    dict(s="abc"),
+    dict(s="Hello, World!"),
 ]
 if all(judge(f(**testcase), **testcase) for testcase in testcases):
-	print("Congrats!")
+    print("Congrats!")
 else:
-	print("Failed.")
+    print("Failed.")`,
+
+`testcases = [
+    dict(n=10, k=3),
+    dict(n=5, k=5),
+]
+if all(judge(f(**testcase), **testcase) for testcase in testcases):
+    print("Congrats!")
+else:
+    print("Failed.")`,
+
+`testcases = [
+    dict(board=[[1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 0, 0], [1, 1, 1, 0]]),
+    dict(board=[[1, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1], [0, 1, 0, 0]]),
+    dict(board=[[0, 1, 1, 1], [0, 1, 1, 0], [1, 1, 0, 1], [0, 0, 0, 0]]),
+    dict(board=[[1, 0, 0, 0], [1, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
+    dict(board=[[0, 1, 1, 1], [0, 0, 0, 0], [1, 1, 0, 0], [1, 0, 1, 0]]),
+]
+if all(judge(f(**testcase), **testcase) for testcase in testcases):
+    print("Congrats!")
+else:
+    print("Failed.")`,
+    ];
+    yourcode = [
+`def f(s):`,
+`def f(n, k):`,
+`def f(board):`,
+    ]
+
+    document.getElementById("puzzlecode").value = puzzlecode[id];
+    document.getElementById("judgecode").value = judgecode[id];
+    document.getElementById("yourcode").value = yourcode[id];
+}
+</script> 
+
+<select id="dropdown" onchange="switchPuzzle(this.value)">
+    <option value="1" selected>Puzzle 1</option>
+    <option value="2">Puzzle 2</option>
+    <option value="3">Puzzle 3</option>
+</select>
+
+<h3>Python Programming Puzzle Example 1</h3> 
+<textarea spellcheck="false" id="puzzlecode" cols="100" rows="10">
+def judge(ans: List[int], n, k):
+    """
+    Find a permutation of length `n` that has `k` fixed points
+    """
+    assert sorted(ans) == [i for i in range(n)]
+    return k == len([i for i in range(n) if ans[i] == i])
+</textarea>
+<textarea spellcheck="false" id="judgecode" cols="100" rows="10">
+testcases = [
+    dict(n=10, k=3),
+    dict(n=5, k=5),
+]
+if all(judge(f(**testcase), **testcase) for testcase in testcases):
+    print("Congrats!")
+else:
+    print("Failed.")
 </textarea>
 <form> 
-<textarea id="yourcode" cols="100" rows="10" placeholder="def f(n, k):
-	pass">
+<textarea spellcheck="false" id="yourcode" cols="100" rows="10">
+def f(n, k):
 </textarea><br /> 
 <button type="button" onclick="runit()">Run</button> 
 </form> 
 <pre id="output" ></pre> 
-<!-- If you want turtle graphics include a canvas -->
-<div id="mycanvas"></div> 
+
+<details id="ai-solution">
+    <summary>AI solution:</summary>
+    test
+</details>
 
 </body> 
 
