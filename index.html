@@ -86,17 +86,11 @@ function switchPuzzle(num) {
     assert sorted(ans) == [i for i in range(n)]
     return k == len([i for i in range(n) if ans[i] == i])`,
 
-`def judge(moves: List[List[int]], board):
-    def isValid(x, y):
-        return 0 <= x < 4 and 0 <= y < 4
-    b = [[board[i][j] for j in range(4)] for i in range(4)]
-    for x, y in moves:
-        assert isValid(x, y)
-        for dx, dy in [[0, 0], [0, 1], [1, 0], [0, -1], [-1, 0]]:
-            if isValid(x + dx, y + dy):
-                b[x + dx][y + dy] = not b[x + dx][y + dy]
-
-    return all(b[x][y] == 0 for x in range(4) for y in range(4))`,
+`def judge(ans: List[List[int]], points):
+    added_point, center_point = ans
+    cx, cy = center_point
+    new_points = points + [added_point[:]]
+    return sorted(new_points) == sorted([[cx + cx - x, cy + cy - y] for x, y in new_points])`,
     ];
     judgecode = [
 `testcases = [
@@ -118,11 +112,11 @@ else:
     print("Failed.")`,
 
 `testcases = [
-    dict(board=[[1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 0, 0], [1, 1, 1, 0]]),
-    dict(board=[[1, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1], [0, 1, 0, 0]]),
-    dict(board=[[0, 1, 1, 1], [0, 1, 1, 0], [1, 1, 0, 1], [0, 0, 0, 0]]),
-    dict(board=[[1, 0, 0, 0], [1, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
-    dict(board=[[0, 1, 1, 1], [0, 0, 0, 0], [1, 1, 0, 0], [1, 0, 1, 0]]),
+    dict(points=[[100, 100], [0, 0], [3, -3]]),
+    dict(points=[[-205, 455], [1163, -1253], [865, -771], [508, -362], [409, 575], [152, 46], [-503, 937]]),
+    dict(points=[[522, -1240], [794, -1425], [584, -5], [890, 898], [-436, -1264], [-118, -1037], [-198, -5], [130, -1945], [50, -913], [368, -686], [-958, -2848], [-862, -525], [35, -707], [-590, -710], [-652, -1945], [-552, -1251], [-190, -2717], [42, -1025], [562, -407], [-482, -763], [-952, -2686], [122, 767], [884, 736], [414, -1187], [-630, -1543], [-103, -1243], [-431, -1331], [484, -699], [-110, -925]]),
+    dict(points=[[-947, 857], [-2733, 889], [324, 334], [-865, -486], [-2605, 1599], [839, 825], [928, 982], [-1029, 2200], [-2218, 1380], [-983, -491], [-2167, 769], [-2702, 772], [-662, 299], [601, 782], [-2736, 1237], [-1489, 887], [169, -2], [-2107, 1002], [-2343, 1732], [213, 712], [-2063, 1716], [449, -18], [-405, 827], [842, 477], [-1232, 1415], [808, 942], [273, 945], [-2495, 932], [-2822, 732], [711, 115]]),
+    dict(points=[[933, -1153], [761, -1336], [-833, 651], [868, -1928], [40, -777], [236, -543], [-717, -384], [-612, -1417], [4, -943], [-192, -1177], [540, -511], [-496, -1209], [-889, -567], [-150, 75], [194, -1795], [-824, 208], [877, -2371]]),
 ]
 if all(judge(f(**testcase), **testcase) for testcase in testcases):
     print("Congrats!")
@@ -132,12 +126,34 @@ else:
     yourcode = [
 `def f(s):`,
 `def f(n, k):`,
-`def f(board):`,
+`def f(points):`,
+    ]
+    ai = [
+`def f(s):
+    return s[::-1]`,
+`def f(n, k):
+    if k == n:
+        return list(range(n))
+    return [i for i in range(n) if i != k] + [k]`,
+`AI didn't solve it! Here's my solution:
+def sol(points):
+    xs = sorted([x for x, y in points])
+    ys = sorted([y for x, y in points])
+
+    possible_cx = [(xs[0] + xs[-1]) // 2, (xs[1] + xs[-1]) // 2, (xs[0] + xs[-2]) // 2]
+    possible_cy = [(ys[0] + ys[-1]) // 2, (ys[1] + ys[-1]) // 2, (ys[0] + ys[-2]) // 2]
+    for cx in possible_cx:
+        for cy in possible_cy:
+            added_point = [cx * (len(points) + 1) - sum(xs), cy * (len(points) + 1) - sum(ys)]
+            new_points = points + [added_point]
+            if sorted(new_points) == sorted([[cx + cx - x, cy + cy - y] for x, y in new_points]):
+                return [added_point, [cx, cy]]`,
     ]
 
     document.getElementById("puzzlecode").value = puzzlecode[id];
     document.getElementById("judgecode").value = judgecode[id];
     document.getElementById("yourcode").value = yourcode[id];
+    document.getElementById("ai-solution").value = ai[id];
 }
 </script> 
 
@@ -174,9 +190,12 @@ def f(n, k):
 </form> 
 <pre id="output" ></pre> 
 
-<details id="ai-solution">
+<details>
     <summary>AI solution:</summary>
-    test
+    <textarea readonly spellcheck="false" id="ai-solution" cols="100" rows="10">
+def f(s):
+    return s[::-1]
+    </textarea>
 </details>
 
 </body> 
